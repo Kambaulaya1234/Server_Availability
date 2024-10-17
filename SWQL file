@@ -1,0 +1,51 @@
+Purpose of the Query:
+This query is meant to track the downtime of specific nodes (those with names containing "&&&&&&&&&&&&&&&&&") during 2023. It will list the exact dates and times when the nodes were down, along with other relevant information, such as how long they were down (PercentDown) and how much packet loss occurred (PercentLoss).
+
+Use Case:
+Monitoring Availability: The query helps in analyzing when and how often specific nodes experienced downtime.
+Troubleshooting: It provides details that can be used to troubleshoot the root cause of downtime, such as the exact timestamps of outages and packet loss percentages.
+Performance Reporting: This can be used in generating availability reports for nodes over a given period (in this case, 2023).
+
+Breakdown of the Query:
+Columns Selected:
+
+rt.Availability: This column displays the availability status of the node. Since the query filters for rt.Availability = 0, it will only show records where the node was completely down (i.e., 0% availability).
+rt.NodeID: The unique identifier for each node (device) in SolarWinds.
+n.Caption AS [Node Name]: The Caption is the node's name (also called node label or description). This is pulled from the Orion.Nodes table and displayed as [Node Name] in the query result.
+rt.ObservationTimestamp: The timestamp when the observation (response time and availability data) was recorded. It helps you track when the node was down.
+rt.PercentDown: The percentage of time the node was down during the observation period.
+rt.PercentLoss: The percentage of packet loss detected during the observation.
+Tables Involved:
+
+Orion.ResponseTime rt: This table stores information related to the response time, availability, and packet loss of nodes over time.
+Orion.Nodes n: This table stores metadata about nodes, including the NodeID and the Caption (node name).
+Join Condition:
+
+JOIN Orion.Nodes n ON rt.NodeID = n.NodeID: This join operation links the Orion.ResponseTime table to the Orion.Nodes table using the NodeID. This allows the query to retrieve additional details (e.g., node name) from the Orion.Nodes table.
+Filter Conditions:
+
+n.Caption LIKE '%&&&&&&&&%': This filter ensures that only nodes whose names (captions) contain the string "&&" are included. This is a partial match filter (using %), so any node name that contains "ARUTI" in any part of the name will be selected.
+rt.ObservationTimestamp BETWEEN '2023-01-01' AND '2023-12-31': This condition filters the data to include only records from the year 2023.
+rt.Availability = 0: This condition limits the results to times when the node was completely down (i.e., Availability = 0).
+Ordering:
+
+ORDER BY rt.ObservationTimestamp: The results are ordered by the ObservationTimestamp in ascending order, which means the downtime events will be displayed chronologically.
+
+SELECT 
+    rt.Availability, 
+    rt.NodeID,  
+    n.Caption AS [Node Name],  -- Display the node's caption (name)
+    rt.ObservationTimestamp, 
+    rt.PercentDown, 
+    rt.PercentLoss
+FROM 
+    Orion.ResponseTime rt
+JOIN 
+    Orion.Nodes n ON rt.NodeID = n.NodeID  -- Join the Nodes table to get the node's caption
+WHERE 
+    n.Caption LIKE '%&&&&%'  -- Filter based on the node's caption
+    AND rt.ObservationTimestamp BETWEEN '2023-01-01' AND '2023-12-31'
+    AND rt.Availability = 0  -- Only include rows where availability is 0 (node is down)
+ORDER BY 
+    rt.ObservationTimestamp;
+
